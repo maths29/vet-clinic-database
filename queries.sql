@@ -15,47 +15,51 @@
       
 -- Query and Update animals table
 
+/* Transactions */
+
+/*1*/
+/*Inside a transaction update the animals table by setting the species column to unspecified*/
 BEGIN;
+UPDATE animals SET species = 'unspecified';
 
-UPDATE animals SET species='unspecified';
-
+/*Roll back the change*/
 ROLLBACK;
+/*Verify that the species columns went back to the state before the transaction*/
+SELECT * FROM animals;
 
-
+/*2*/
+/*Inside a transaction*/
 BEGIN;
-
-UPDATE animals
-SET species ='digimon'
-WHERE name like '%mon';
-
-
-UPDATE animals
-SET species ='pokemon'
-WHERE name NOT like '%mon';
-
+/*Update the animals table by setting the species column to digimon for all animals that have a name ending in mon*/
+UPDATE animals SET species = 'digimon' WHERE name LIKE '%mon';
+/*Update the animals table by setting the species column to pokemon for all animals that don't have species already set*/
+UPDATE animals SET species = 'pokemon' WHERE species = '';
+/*Commit the transaction.*/
 COMMIT;
+/*Verify that changes persist after commit.*/
+SELECT * FROM animals;
 
+/*3*/
+/*Inside a transaction delete all records in the animals table, then roll back the transaction*/
 BEGIN;
-
 DELETE FROM animals;
-
 ROLLBACK;
+SELECT * FROM animals;
 
-
+/*4*/
+/*Inside a transaction:*/
 BEGIN;
-
-SAVEPOINT SP1;
-
-DELETE FROM animals WHERE date_of_birth > '2022-01-01';
-
-SAVEPOINT SP2;
-
-UPDATE animals SET weight_kg=weight_kg * (-1);
-
-ROLLBACK TO SP1;
-
+/*Delete all animals born after Jan 1st, 2022.*/
+DELETE FROM animals WHERE date_of_birth IN (SELECT date_of_birth WHERE date_of_birth > '2022-01-01');
+/*Create a savepoint for the transaction.*/
+SAVEPOINT delete_date;
+/*Update all animals' weight to be their weight multiplied by -1.*/
+UPDATE animals SET weight_kg = weight_kg * -1;
+/*Rollback to the savepoint*/
+ROLLBACK TO SAVEPOINT delete_date;
+/*Update all animals' weights that are negative to be their weight multiplied by -1.*/
 UPDATE animals SET weight_kg = weight_kg * -1 WHERE weight_kg < 0;
-
+/*Commit transaction.*/
 COMMIT;
 
 
